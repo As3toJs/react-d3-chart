@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import * as d3 from "d3";
 import chartData from './BarChartData';
+import './BarChart.css';
 
 export default class BarChart extends Component {
   constructor(props) {
@@ -39,6 +40,10 @@ export default class BarChart extends Component {
       .attr('class', 'added')
       .attr('transform', (x) => `translate(${xScale(x.label)}, 0)`);
 
+    const tooltip = d3.select('body').append('div')
+      .attr('class', 'tooltip')
+      .style('opacity', 0);
+
     //Multiple bars
     enterGElements
       .append('rect')
@@ -53,28 +58,39 @@ export default class BarChart extends Component {
       .attr('fill', 'tomato')
       .attr("height", (d) => Math.abs(yScale(d.val) - yScale(0)))
       .on("mouseover", function (d) {
-        console.log("id :", d.id)
+        tooltip.transition().duration(200).style('opacity', 0.9);
+        tooltip.html(`Frequency: <span>${d.id}</span>`)
+          .style('left', `${d3.event.layerX}px`)
+          .style('top', `${(d3.event.layerY - 28)}px`);
+        // console.log("id :", d.id)
         d3.select(this).attr("fill", 'red');
       })
       .on("mouseout", function () {
+        tooltip.transition().duration(500).style('opacity', 0);
         d3.select(this).attr("fill", () => 'tomato');
       });
 
     // Draw a line 
     var valueLine = d3.line()
-      .defined(d => d)
       .x(d => lineXScale(d.label))
-      .y(d => yScale(30));
+      .y(d => {
+        console.log(d.maxVal);
+        return yScale(Number(20))
+      });
 
     const lineXScale = d3.scaleBand()
       .domain(data.map((d) => d.label))
       .rangeRound([margin.left, width + margin.right])
 
+    var nest = d3.nest()
+      .key(function (d) {
+        return d.val;
+      })
+      .entries(data)
+
     this.svg.append("path")
       .data([data])
       .attr("class", "line")
-      .attr('stroke', 'black')
-      .attr('stroke-width', 2)
       .attr("d", valueLine);
 
     // xAsis and yAxis
